@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marking Copilot</title>
+    
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/highlighting.css">
+    <link rel="stylesheet" href="css/comments.css">
+    <link rel="stylesheet" href="css/suggestions.css">
+    
+    <!-- PDF.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>Marking Copilot</h2>
+            
+            <div class="assignment-section">
+                <div class="assignment-nav">
+                    <button id="prev-assignment" class="nav-btn">‹</button>
+                    <div class="assignment-counter">
+                        <div id="assignment-info">1 of 1</div>
+                    </div>
+                    <button id="next-assignment" class="nav-btn">›</button>
+                </div>
+                
+                <div class="assignment-metadata">
+                    <div class="metadata-item">
+                        <label class="metadata-label">Student:</label>
+                        <span id="student-name">Loading...</span>
+                    </div>
+                    <div class="metadata-item">
+                        <label class="metadata-label">Title:</label>
+                        <span id="assignment-title">Loading...</span>
+                    </div>
+                    <div class="metadata-item">
+                        <label class="metadata-label">Course:</label>
+                        <span id="course-name">Loading...</span>
+                    </div>
+                    <div class="metadata-item">
+                        <label class="metadata-label">Due Date:</label>
+                        <span id="due-date">Loading...</span>
+                    </div>
+                    <div class="metadata-item">
+                        <label class="metadata-label">Status:</label>
+                        <span id="assignment-status" class="status-badge">pending</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="upload-section">
+                <label for="pdf-upload" class="upload-label">Upload PDF:</label>
+                <input type="file" id="pdf-upload" accept=".pdf" />
+            </div>
+            
+            <div class="search-section">
+                <label for="search-text" class="search-label">Search Text:</label>
+                <input type="text" id="search-text" placeholder="Enter text to highlight similar content" />
+                
+                <div class="threshold-section">
+                    <label for="threshold" class="threshold-label">Similarity Threshold:</label>
+                    <div class="threshold-controls">
+                        <input type="range" id="threshold" min="0.5" max="1" step="0.05" value="0.7" />
+                        <span id="threshold-value" class="threshold-display">0.7</span>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="highlight-btn" class="btn-primary">Highlight Similar</button>
+                    <button id="clear-btn" class="btn-secondary">Clear Highlights</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="pdf-viewer">
+            <div id="pdf-container">
+                <div class="upload-prompt">
+                    <p>Upload a PDF file to get started</p>
+                </div>
+            </div>
+            
+            <div class="controls overview-mode">
+                <button id="prev-page">Previous</button>
+                <span id="page-info">Page 1 of 1</span>
+                <button id="next-page">Next</button>
+                <button id="zoom-out">Zoom Out</button>
+                <button id="zoom-in">Zoom In</button>
+                <span class="mode-indicator">Overview Mode - Use arrows to navigate, Enter to focus</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript Modules -->
+    <script src="js/PDFHandler.js"></script>
+    <script src="js/SuggestionSystem.js"></script>
+    <script src="js/CommentSystem.js"></script>
+    <script src="js/TextHighlighter.js"></script>
+    <script src="js/AssignmentManager.js"></script>
+    <script src="js/ViewManager.js"></script>
+    <script src="js/PDFRenderer.js"></script>
+    <script src="js/PageNavigator.js"></script>
+    <script src="js/PDFHighlighterApp.js"></script>
+</body>
+</html>
