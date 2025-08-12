@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Diana Miller - Math Assignment</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+        h1 { color: #333; }
+        .problem { margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4; }
+        .solution { margin: 10px 0 0 20px; }
+        .correct { color: #34A853; }
+        .error { color: #EA4335; }
+        .partial { color: #FBBC05; }
+    </style>
+</head>
+<body>
+    <h1>Calculus Assignment 3 - Diana Miller</h1>
+    <p><strong>Due:</strong> October 23, 2023 | <strong>Submitted:</strong> October 25, 2023 (LATE)</p>
+    
+    <div class="problem">
+        <h3>Problem 1: Find the derivative of f(x) = 3x² + 2x - 5</h3>
+        <div class="solution">
+            <p><strong>Solution:</strong></p>
+            <p>Using power rule: d/dx(xⁿ) = nxⁿ⁻¹</p>
+            <p>f'(x) = 3(2x¹) + 2(1x⁰) - 0</p>
+            <p class="correct">f'(x) = 6x + 2</p>
+        </div>
+    </div>
+    
+    <div class="problem">
+        <h3>Problem 2: Evaluate ∫(4x³ - 2x + 1)dx</h3>
+        <div class="solution">
+            <p><strong>Solution:</strong></p>
+            <p>∫(4x³ - 2x + 1)dx</p>
+            <p>Using power rule for integration: ∫xⁿdx = xⁿ⁺¹/(n+1) + C</p>
+            <p>= 4(x⁴/4) - 2(x²/2) + x + C</p>
+            <p class="correct">= x⁴ - x² + x + C</p>
+        </div>
+    </div>
+    
+    <div class="problem">
+        <h3>Problem 3: Find the limit: lim(x→2) (x² - 4)/(x - 2)</h3>
+        <div class="solution">
+            <p><strong>Solution:</strong></p>
+            <p>Direct substitution gives 0/0 (indeterminate form)</p>
+            <p>Factor numerator: x² - 4 = (x + 2)(x - 2)</p>
+            <p>lim(x→2) (x + 2)(x - 2)/(x - 2)</p>
+            <p>= lim(x→2) (x + 2)</p>
+            <p class="correct">= 2 + 2 = 4</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Marking Copilot</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;family=Google+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0EWHeAOQVHCnbIOoL+M/7gGh9P2kwdSO6A4e7KCEkI+a9C5d9Cas" rel="stylesheet"/>
+<script crossorigin="anonymous" defer="" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOeLeOLALmuqehneUG+vnGctmUb0ZY0l8" src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script crossorigin="anonymous" defer="" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" onload="renderMathInElement(document.body);" src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style type="text/tailwindcss">
+        :root {
+            --google-blue: #4285F4;
+            --google-red: #EA4335;
+            --google-yellow: #FBBC05;
+            --google-green: #34A853;
+            --background-color: #F8F9FA;
+            --surface-color: #ffffff;
+            --on-surface-color: #202124;
+            --on-surface-variant-color: #5f6368;
+            --border-color: #e0e0e0;
+            --selected-item-background: #E8F0FE;
+            --active-item-background: #D2E3FC;
+            --highlighted-background: #F0F6FF;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--background-color);
+            color: var(--on-surface-color);
+        }
+        .google-sans {
+            font-family: 'Google Sans', sans-serif;
+        }
+        .icon-button {
+            @apply p-2 rounded-full hover:bg-gray-100;
+        }
+        .view-button {
+            @apply flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium;
+        }
+        .view-button.active {
+            @apply bg-blue-100 text-[var(--google-blue)];
+        }
+        .view-button:not(.active) {
+            @apply text-[var(--on-surface-variant-color)] hover:bg-gray-100;
+        }
+        .solution-item {
+            transition: background-color 0.2s ease-in-out;
+        }
+        .solution-item > div {
+            transition: background-color 0.2s ease-in-out;
+        }
+        .solution-item:not(.checked):not(.active) > div:hover {
+            background-color: #f9fafb;
+        }
+        .solution-item.checked {
+            background-color: var(--selected-item-background) !important;
+        }
+        .solution-item.checked:hover {
+            background-color: var(--selected-item-background) !important;
+        }
+        .solution-item.checked > div {
+            background-color: transparent !important;
+        }
+        .solution-item.checked > div:hover {
+            background-color: transparent !important;
+        }
+        .solution-item.active {
+            background-color: var(--active-item-background) !important;
+        }
+        .solution-item.active:hover {
+            background-color: var(--active-item-background) !important;
+        }
+        .solution-item.active > div {
+            background-color: transparent !important;
+        }
+        .solution-item.active > div:hover {
+            background-color: transparent !important;
+        }
+        .student-checkbox:focus {
+            outline: none !important;
+            box-shadow: none !important;
+            ring: none !important;
+        }
+    </style>
+</head>
+<body class="antialiased">
+<div class="flex h-screen bg-[var(--background-color)]">
+<aside class="w-80 bg-[var(--surface-color)] border-r border-[var(--border-color)] flex flex-col">
+<div class="p-4 border-b border-[var(--border-color)]">
+<div class="flex items-center justify-between">
+<h2 class="text-lg google-sans font-medium text-[var(--on-surface-color)]">Calculus Assignment 3</h2>
+<button class="icon-button text-[var(--on-surface-variant-color)] delete-assignment-btn">
+<span class="material-icons text-xl">delete</span>
+</button>
+</div>
+<p class="text-sm text-[var(--on-surface-variant-color)]">15 submissions</p>
+</div>
+<div class="flex-grow overflow-y-auto">
+<ul id="student-list">
+<!-- Students will be dynamically generated here -->
+</ul>
+</div>
+<div class="p-4 border-t border-[var(--border-color)]">
+<input type="file" id="file-upload" accept=".html,.pdf,.txt,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.bmp" style="display: none;">
+<button class="w-auto bg-white hover:bg-gray-100 text-gray-800 font-medium py-4 px-6 rounded-2xl text-sm shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_2px_6px_2px_rgba(60,64,67,0.15)] transition-all flex items-center justify-center space-x-3 upload-btn">
+<span class="material-icons text-2xl text-[var(--google-blue)]">upload</span>
+<span class="google-sans">Upload New Solution</span>
+</button>
+</div>
+</aside>
+<div class="flex-1 flex flex-col">
+<header class="bg-[var(--surface-color)] border-b border-[var(--border-color)] flex-shrink-0">
+<div class="h-16 flex items-center justify-between px-6">
+<div class="flex items-center space-x-4">
+<span class="text-xl google-sans text-[#5f6368]">
+<span class="text-[var(--google-blue)]">M</span><span class="text-[var(--google-red)]">a</span><span class="text-[var(--google-yellow)]">r</span><span class="text-[var(--google-green)]">k</span><span class="text-[var(--google-blue)]">i</span><span class="text-[var(--google-red)]">n</span>g Copilot
+                    </span>
+</div>
+<div class="flex items-center space-x-2">
+<button class="view-button active solution-view-btn">
+<span class="material-icons text-base">description</span>
+<span>Solution</span>
+</button>
+<button class="view-button latex-view-btn">
+<span class="material-icons text-base">code</span>
+<span>LaTeX</span>
+</button>
+<button class="view-button logic-view-btn">
+<span class="material-icons text-base">schema</span>
+<span>Logic</span>
+</button>
+<div class="w-px h-6 bg-gray-200 mx-2"></div>
+<button class="bg-[var(--google-blue)] text-white font-medium py-2 px-4 rounded-md text-sm hover:bg-blue-700 transition-colors flex items-center space-x-2 complete-grading-btn">
+<span>Complete Grading</span>
+<span class="material-icons text-base">check_circle</span>
+</button>
+</div>
+</div>
+</header>
+<main class="flex-1 overflow-y-auto p-8">
+<div id="submission-content" class="max-w-4xl mx-auto bg-[var(--surface-color)] p-12 rounded-lg shadow-sm border border-[var(--border-color)]">
+<div class="text-center text-gray-500 py-20">
+<span class="material-icons text-6xl mb-4">assignment</span>
+<h2 class="text-xl font-medium mb-2">Select a student submission</h2>
+<p>Click on a student from the left panel to view their work</p>
+</div>
+</div>
+</main>
+</div>
+</div>
+
+<script>
+const submissionContent = document.getElementById('submission-content');
+const studentList = document.getElementById('student-list');
+
+// Student metadata - in a real app this would come from an API
+const studentInfo = [
+    { id: 'alice_johnson', name: 'Alice Johnson', status: 'Graded', statusColor: 'bg-[var(--google-green)]', date: 'Oct 23, 2023' },
+    { id: 'bob_williams', name: 'Bob Williams', status: 'In Progress', statusColor: 'bg-[var(--google-blue)]', date: 'Oct 23, 2023' },
+    { id: 'charlie_brown', name: 'Charlie Brown', status: 'Not Graded', statusColor: 'bg-gray-200', date: 'Oct 24, 2023', textColor: 'text-[var(--on-surface-variant-color)]' },
+    { id: 'diana_miller', name: 'Diana Miller', status: 'Late', statusColor: 'bg-[var(--google-red)]', date: 'Oct 25, 2023' },
+    { id: 'eve_davis', name: 'Eve Davis', status: 'Not Graded', statusColor: 'bg-gray-200', date: 'Oct 24, 2023', textColor: 'text-[var(--on-surface-variant-color)]' }
+];
+
+let submissions = {};
+
+// Generate student list dynamically
+function generateStudentList() {
+    studentList.innerHTML = '';
+    
+    studentInfo.forEach((student, index) => {
+        const textColorClass = student.textColor || 'text-white';
+        const isActive = student.id === 'bob_williams' ? ' active' : '';
+        
+        const listItem = document.createElement('li');
+        listItem.className = `border-b border-[var(--border-color)] solution-item${isActive}`;
+        listItem.setAttribute('data-student', student.id);
+        listItem.innerHTML = `
+            <div class="flex items-center p-4 cursor-pointer student-button" data-student="${student.id}">
+                <input class="mr-4 h-4 w-4 rounded border-gray-300 text-[var(--google-blue)] focus:ring-[var(--google-blue)] student-checkbox" type="checkbox" data-student="${student.id}"/>
+                <div class="w-full text-left solution-item-content">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-medium text-sm text-[var(--on-surface-color)]">${student.name}</h3>
+                        <span class="text-xs ${textColorClass} ${student.statusColor} font-semibold px-2 py-1 rounded-full">${student.status}</span>
+                    </div>
+                    <p class="text-xs text-[var(--on-surface-variant-color)] mt-1">Submitted: ${student.date}</p>
+                </div>
+            </div>
+        `;
+        studentList.appendChild(listItem);
+        
+        // Set up submission path
+        submissions[student.id] = `submissions/${student.id}_math.html`;
+    });
+}
+
+function clearActiveStates() {
+    document.querySelectorAll('.solution-item').forEach(item => {
+        item.classList.remove('active');
+    });
+}
+
+// Delete selected submissions
+function deleteSelectedSubmissions() {
+    const checkedCheckboxes = document.querySelectorAll('.student-checkbox:checked');
+    const checkedStudentIds = Array.from(checkedCheckboxes).map(cb => cb.getAttribute('data-student'));
+    
+    if (checkedStudentIds.length === 0) {
+        alert('Please select submissions to delete.');
+        return;
+    }
+    
+    const studentNames = checkedStudentIds.map(id => {
+        const student = studentInfo.find(s => s.id === id);
+        return student ? student.name : id;
+    });
+    
+    const confirmMessage = `Are you sure you want to delete ${checkedStudentIds.length} submission(s)?\n\n${studentNames.join('\n')}`;
+    
+    if (confirm(confirmMessage)) {
+        // Check if we're deleting the currently active submission
+        const activeSubmission = document.querySelector('.solution-item.active');
+        const activeStudentId = activeSubmission ? activeSubmission.getAttribute('data-student') : null;
+        const deletingActive = checkedStudentIds.includes(activeStudentId);
+        
+        // Remove from studentInfo array
+        checkedStudentIds.forEach(studentId => {
+            const index = studentInfo.findIndex(student => student.id === studentId);
+            if (index !== -1) {
+                studentInfo.splice(index, 1);
+            }
+            // Remove from submissions object
+            delete submissions[studentId];
+        });
+        
+        // Regenerate the student list
+        generateStudentList();
+        
+        // Update submission count
+        updateSubmissionCount();
+        
+        // If we deleted the active submission, load a different one or show default
+        if (deletingActive) {
+            if (studentInfo.length > 0) {
+                // Load the first remaining submission
+                loadSubmission(studentInfo[0].id);
+                document.querySelector(`[data-student="${studentInfo[0].id}"]`).closest('.solution-item').classList.add('active');
+            } else {
+                // No submissions left, show empty state
+                showEmptyState();
+            }
+        }
+        
+        // Deletion completed silently
+    }
+}
+
+// Update submission count in the UI
+function updateSubmissionCount() {
+    const countElement = document.querySelector('aside p');
+    if (countElement) {
+        countElement.textContent = `${studentInfo.length} submissions`;
+    }
+}
+
+// Show empty state when no submissions remain
+function showEmptyState() {
+    submissionContent.innerHTML = `
+        <div class="text-center text-gray-500 py-20">
+            <span class="material-icons text-6xl mb-4">folder_open</span>
+            <h2 class="text-xl font-medium mb-2">No submissions remaining</h2>
+            <p>All submissions have been deleted</p>
+        </div>
+    `;
+}
+
+// PDF renderer using browser's native PDF viewer
+async function renderPDF(pdfData, studentId, displayName, fileName, uploadDate) {
+    try {
+        // Convert PDF data to blob URL
+        const blob = new Blob([pdfData], { type: 'application/pdf' });
+        const pdfUrl = URL.createObjectURL(blob);
+        
+        // Create container with embedded PDF viewer
+        const containerDiv = document.createElement('div');
+        containerDiv.style.cssText = `
+            width: 100%;
+            height: 100vh;
+            background-color: #f8fafc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        `;
+        
+        // Create embedded PDF viewer
+        const embed = document.createElement('embed');
+        embed.src = pdfUrl;
+        embed.type = 'application/pdf';
+        embed.style.cssText = `
+            width: 100%;
+            max-width: 900px;
+            height: 95%;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            background: white;
+        `;
+        
+        containerDiv.appendChild(embed);
+        
+        // Store the PDF HTML with proper page structure
+        submissionData[studentId] = containerDiv.outerHTML;
+        
+        // Clean up the blob URL after a delay to allow loading
+        setTimeout(() => {
+            URL.revokeObjectURL(pdfUrl);
+        }, 5000);
+        
+        // Refresh display if this PDF is active
+        const activeSubmission = document.querySelector('.solution-item.active');
+        if (activeSubmission && activeSubmission.getAttribute('data-student') === studentId) {
+            loadSubmission(studentId);
+        }
+        
+    } catch (error) {
+        console.error('Error rendering PDF:', error);
+        submissionData[studentId] = `
+            <div style="text-align: center; padding: 50px; color: #dc2626;">
+                <h3>PDF Error</h3>
+                <p>Could not load this PDF file.</p>
+            </div>
+        `;
+        
+        const activeSubmission = document.querySelector('.solution-item.active');
+        if (activeSubmission && activeSubmission.getAttribute('data-student') === studentId) {
+            loadSubmission(studentId);
+        }
+    }
+}
+
+// Handle file upload
+function handleFileUpload() {
+    const fileInput = document.getElementById('file-upload');
+    fileInput.click();
+}
+
+// Process uploaded file
+function processUploadedFile(file) {
+    if (!file) return;
+    
+    // Generate student ID from filename
+    const fileName = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
+    const studentId = fileName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    
+    // Check if student already exists
+    const existingStudent = studentInfo.find(s => s.id === studentId);
+    if (existingStudent) {
+        if (!confirm(`A submission for "${fileName}" already exists. Replace it?`)) {
+            return;
+        }
+        // Remove existing student
+        const index = studentInfo.findIndex(s => s.id === studentId);
+        studentInfo.splice(index, 1);
+    }
+    
+    let displayName = fileName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    
+    // Create new student entry
+    const newStudent = {
+        id: studentId,
+        name: displayName,
+        status: 'Not Graded',
+        statusColor: 'bg-gray-200',
+        textColor: 'text-[var(--on-surface-variant-color)]',
+        date: new Date().toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric' 
+        })
+    };
+    
+    // Add to student info
+    studentInfo.push(newStudent);
+    submissions[studentId] = null; // Mark as uploaded file
+    
+    // Create submission content based on file type
+    let submissionHTML;
+    
+    if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+        // Handle PDFs with direct rendering
+        const fileReader = new FileReader();
+        fileReader.onload = function(e) {
+            const pdfData = new Uint8Array(e.target.result);
+            
+            // Render PDF using PDF.js
+            renderPDF(pdfData, studentId, displayName, file.name, newStudent.date);
+        };
+        fileReader.readAsArrayBuffer(file);
+        
+        // Immediately update UI with loading state
+        submissionData[studentId] = `
+            <div style="margin: 20px 0; padding: 40px; text-align: center;">
+                <div class="loading-spinner" style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #4285F4; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                <p style="margin-top: 15px;">Loading PDF...</p>
+            </div>
+            <style>
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            </style>
+        `;
+        
+        generateStudentList();
+        updateSubmissionCount();
+        loadSubmission(studentId);
+        clearActiveStates();
+        document.querySelector(`[data-student="${studentId}"]`).closest('.solution-item').classList.add('active');
+        
+    } else if (file.type === 'text/html' || file.name.endsWith('.html')) {
+        // Handle HTML files
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const content = e.target.result;
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content;
+            const bodyContent = tempDiv.querySelector('body');
+            submissionHTML = bodyContent ? bodyContent.innerHTML : content;
+            
+            submissionData[studentId] = submissionHTML;
+            generateStudentList();
+            updateSubmissionCount();
+            loadSubmission(studentId);
+            clearActiveStates();
+            document.querySelector(`[data-student="${studentId}"]`).closest('.solution-item').classList.add('active');
+        };
+        reader.readAsText(file);
+        
+    } else if (file.type.startsWith('text/') || file.name.endsWith('.txt')) {
+        // Handle text files
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const content = e.target.result;
+            submissionHTML = `<pre style="white-space: pre-wrap; font-family: monospace; line-height: 1.5; padding: 20px; background: white; border: 1px solid #ddd; border-radius: 4px;">${content}</pre>`;
+            
+            submissionData[studentId] = submissionHTML;
+            generateStudentList();
+            updateSubmissionCount();
+            loadSubmission(studentId);
+            clearActiveStates();
+            document.querySelector(`[data-student="${studentId}"]`).closest('.solution-item').classList.add('active');
+        };
+        reader.readAsText(file);
+        
+    } else if (file.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(file.name)) {
+        // Handle image files (handwritten solutions, photos, etc.)
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const imageUrl = e.target.result;
+            submissionHTML = `
+                <div style="
+                    width: 100%;
+                    height: 100vh;
+                    background-color: #f8fafc;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    padding: 20px;
+                    box-sizing: border-box;
+                ">
+                    <img src="${imageUrl}" style="
+                        max-width: 100%; 
+                        max-height: 100%; 
+                        object-fit: contain;
+                        border-radius: 8px;
+                        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+                        cursor: zoom-in;
+                        background: white;
+                    " onclick="openImageFullscreen(this)" alt="Student solution" />
+                </div>
+            `;
+            
+            submissionData[studentId] = submissionHTML;
+            generateStudentList();
+            updateSubmissionCount();
+            loadSubmission(studentId);
+            clearActiveStates();
+            document.querySelector(`[data-student="${studentId}"]`).closest('.solution-item').classList.add('active');
+        };
+        reader.readAsDataURL(file);
+        
+    } else {
+        // Handle other file types (DOC, DOCX, etc.)
+        submissionHTML = `
+            <div style="margin: 20px 0; padding: 30px; border-left: 4px solid #EA4335; background-color: #fef2f2; text-align: center;">
+                <span class="material-icons" style="font-size: 48px; color: #dc2626; margin-bottom: 15px;">description</span>
+                <h3 style="color: #dc2626; margin-bottom: 15px;">Preview Not Available</h3>
+                <p style="margin-bottom: 10px;">This file type cannot be previewed in the browser.</p>
+                <p><strong>File uploaded successfully</strong> - use external tools to view content.</p>
+            </div>
+        `;
+        
+        submissionData[studentId] = submissionHTML;
+        generateStudentList();
+        updateSubmissionCount();
+        loadSubmission(studentId);
+        clearActiveStates();
+        document.querySelector(`[data-student="${studentId}"]`).closest('.solution-item').classList.add('active');
+    }
+}
+
+// Fullscreen image viewer
+function openImageFullscreen(img) {
+    // Create fullscreen overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        cursor: zoom-out;
+    `;
+    
+    // Create fullscreen image
+    const fullscreenImg = document.createElement('img');
+    fullscreenImg.src = img.src;
+    fullscreenImg.alt = img.alt;
+    fullscreenImg.style.cssText = `
+        max-width: 95vw;
+        max-height: 95vh;
+        object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    `;
+    
+    // Create close button
+    const closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '×';
+    closeBtn.style.cssText = `
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+        color: #333;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    // Add elements to overlay
+    overlay.appendChild(fullscreenImg);
+    overlay.appendChild(closeBtn);
+    
+    // Close functionality
+    const closeFullscreen = () => {
+        document.body.removeChild(overlay);
+        document.body.style.overflow = '';
+    };
+    
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeFullscreen();
+    });
+    
+    closeBtn.addEventListener('click', closeFullscreen);
+    
+    // ESC key to close
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+            closeFullscreen();
+            document.removeEventListener('keydown', handleEscape);
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
+    
+    // Add to page
+    document.body.style.overflow = 'hidden';
+    document.body.appendChild(overlay);
+}
+
+// Set up file input listener
+document.addEventListener('DOMContentLoaded', () => {
+    const fileInput = document.getElementById('file-upload');
+    if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                processUploadedFile(file);
+            }
+            // Reset input so same file can be uploaded again
+            e.target.value = '';
+        });
+    }
+});
+
+const submissionData = {
+    'alice_johnson': `<h1>Calculus Assignment 3 - Alice Johnson</h1>
+    <p><strong>Due:</strong> October 23, 2023 | <strong>Submitted:</strong> October 23, 2023</p>
+    
+    <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4;">
+        <h3>Problem 1: Find the derivative of f(x) = 3x² + 2x - 5</h3>
+        <div style="margin: 10px 0 0 20px;">
+            <p><strong>Solution:</strong></p>
+            <p>f'(x) = d/dx(3x²) + d/dx(2x) - d/dx(5)</p>
+            <p>f'(x) = 6x + 2 - 0</p>
+            <p style="color: #34A853;">f'(x) = 6x + 2</p>
+        </div>
+    </div>
+    
+    <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4;">
+        <h3>Problem 2: Evaluate ∫(4x³ - 2x + 1)dx</h3>
+        <div style="margin: 10px 0 0 20px;">
+            <p><strong>Solution:</strong></p>
+            <p>∫(4x³ - 2x + 1)dx = ∫4x³dx - ∫2xdx + ∫1dx</p>
+            <p>= 4(x⁴/4) - 2(x²/2) + x + C</p>
+            <p style="color: #34A853;">= x⁴ - x² + x + C</p>
+        </div>
+    </div>
+    
+    <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4;">
+        <h3>Problem 3: Find the limit: lim(x→2) (x² - 4)/(x - 2)</h3>
+        <div style="margin: 10px 0 0 20px;">
+            <p><strong>Solution:</strong></p>
+            <p>lim(x→2) (x² - 4)/(x - 2)</p>
+            <p>= lim(x→2) (x + 2)(x - 2)/(x - 2)</p>
+            <p>= lim(x→2) (x + 2)</p>
+            <p style="color: #34A853;">= 2 + 2 = 4</p>
+        </div>
+    </div>`,
+    
+    'bob_williams': `<h1>Calculus Assignment 3 - Bob Williams</h1>
+    <p><strong>Due:</strong> October 23, 2023 | <strong>Submitted:</strong> October 23, 2023</p>
+    
+    <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4;">
+        <h3>Problem 1: Find the derivative of f(x) = 3x² + 2x - 5</h3>
+        <div style="margin: 10px 0 0 20px;">
+            <p><strong>Solution:</strong></p>
+            <p>f'(x) = d/dx(3x²) + d/dx(2x) - d/dx(5)</p>
+            <p>f'(x) = 6x + 2 - 0</p>
+            <p style="color: #34A853;">f'(x) = 6x + 2</p>
+        </div>
+    </div>
+    
+    <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4;">
+        <h3>Problem 2: Evaluate ∫(4x³ - 2x + 1)dx</h3>
+        <div style="margin: 10px 0 0 20px;">
+            <p><strong>Solution:</strong></p>
+            <p>∫(4x³ - 2x + 1)dx = ∫4x³dx - ∫2xdx + ∫1dx</p>
+            <p style="color: #FBBC05;">= 4(x⁴/4) - 2(x²/2) + x</p>
+            <p style="color: #EA4335;">= x⁴ - x² + x</p>
+            <p><em>Missing constant of integration (+C)</em></p>
+        </div>
+    </div>
+    
+    <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4;">
+        <h3>Problem 3: Find the limit: lim(x→2) (x² - 4)/(x - 2)</h3>
+        <div style="margin: 10px 0 0 20px;">
+            <p><strong>Solution:</strong></p>
+            <p>lim(x→2) (x² - 4)/(x - 2)</p>
+            <p style="color: #EA4335;">Plugging in x = 2: (4 - 4)/(2 - 2) = 0/0</p>
+            <p style="color: #EA4335;">Therefore, the limit is undefined.</p>
+            <p><em>Did not factor to resolve indeterminate form</em></p>
+        </div>
+    </div>`,
+    
+    'charlie_brown': `<h1>Calculus Assignment 3 - Charlie Brown</h1>
+    <p><strong>Due:</strong> October 23, 2023 | <strong>Submitted:</strong> October 24, 2023</p>
+    
+    <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4;">
+        <h3>Problem 1: Find the derivative of f(x) = 3x² + 2x - 5</h3>
+        <div style="margin: 10px 0 0 20px;">
+            <p><strong>Solution:</strong></p>
+            <p style="color: #EA4335;">f'(x) = 3x + 2 - 5</p>
+            <p style="color: #EA4335;">f'(x) = 3x - 3</p>
+            <p><em>Incorrect application of power rule</em></p>
+        </div>
+    </div>
+    
+    <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4;">
+        <h3>Problem 2: Evaluate ∫(4x³ - 2x + 1)dx</h3>
+        <div style="margin: 10px 0 0 20px;">
+            <p><strong>Solution:</strong></p>
+            <p>∫(4x³ - 2x + 1)dx</p>
+            <p style="color: #FBBC05;">= 4x⁴/4 - 2x²/2 + x + C</p>
+            <p style="color: #34A853;">= x⁴ - x² + x + C</p>
+        </div>
+    </div>
+    
+    <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4;">
+        <h3>Problem 3: Find the limit: lim(x→2) (x² - 4)/(x - 2)</h3>
+        <div style="margin: 10px 0 0 20px;">
+            <p><strong>Solution:</strong></p>
+            <p>lim(x→2) (x² - 4)/(x - 2)</p>
+            <p style="color: #EA4335;">= lim(x→2) (x - 4)/(x - 2)</p>
+            <p style="color: #EA4335;">= (2 - 4)/(2 - 2) = -2/0 = undefined</p>
+            <p><em>Incorrect factoring of numerator</em></p>
+        </div>
+    </div>
+    
+    <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4;">
+        <h3>Problem 4: Find d/dx[ln(x² + 3x)]</h3>
+        <div style="margin: 10px 0 0 20px;">
+            <p><strong>Solution:</strong></p>
+            <p style="color: #EA4335;">d/dx[ln(x² + 3x)] = 1/(x² + 3x)</p>
+            <p><em>Missing chain rule application</em></p>
+            <p style="color: #34A853;"><strong>Correct answer:</strong> d/dx[ln(x² + 3x)] = (2x + 3)/(x² + 3x)</p>
+        </div>
+    </div>
+    
+    <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4;">
+        <h3>Problem 5: Evaluate ∫x·e^(x²)dx</h3>
+        <div style="margin: 10px 0 0 20px;">
+            <p><strong>Solution:</strong></p>
+            <p>Let u = x², then du = 2x dx</p>
+            <p style="color: #FBBC05;">∫x·e^(x²)dx = ∫(1/2)e^u du</p>
+            <p style="color: #EA4335;">= (1/2)e^u + C = (1/2)e^(x²) + C</p>
+            <p><em>Correct substitution but forgot the factor of 1/2 in final answer</em></p>
+            <p style="color: #34A853;"><strong>Correct:</strong> (1/2)e^(x²) + C</p>
+        </div>
+    </div>
+    
+    <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4;">
+        <h3>Problem 6: Find the critical points of f(x) = x³ - 6x² + 9x + 1</h3>
+        <div style="margin: 10px 0 0 20px;">
+            <p><strong>Solution:</strong></p>
+            <p>f'(x) = 3x² - 12x + 9</p>
+            <p>Setting f'(x) = 0:</p>
+            <p>3x² - 12x + 9 = 0</p>
+            <p style="color: #FBBC05;">x² - 4x + 3 = 0</p>
+            <p style="color: #EA4335;">(x - 2)² = 1</p>
+            <p style="color: #EA4335;">x - 2 = ±1</p>
+            <p style="color: #EA4335;">x = 2 ± 1, so x = 1 or x = 3</p>
+            <p><em>Factoring error - should be (x-1)(x-3) = 0</em></p>
+            <p style="color: #34A853;"><strong>Correct:</strong> Critical points at x = 1 and x = 3</p>
+        </div>
+    </div>
+    
+    <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4;">
+        <h3>Problem 7: Evaluate lim(x→∞) (2x³ + x² - 1)/(x³ - 3x + 2)</h3>
+        <div style="margin: 10px 0 0 20px;">
+            <p><strong>Solution:</strong></p>
+            <p style="color: #EA4335;">As x → ∞, the limit is ∞/∞ which is indeterminate</p>
+            <p style="color: #EA4335;">Using L'Hôpital's rule repeatedly...</p>
+            <p style="color: #EA4335;">= lim(x→∞) (6x² + 2x)/(3x² - 3)</p>
+            <p style="color: #EA4335;">= lim(x→∞) (12x + 2)/(6x) = 2</p>
+            <p><em>Unnecessary use of L'Hôpital's rule</em></p>
+            <p style="color: #34A853;"><strong>Correct approach:</strong> Divide by highest power: lim(x→∞) 2x³/x³ = 2</p>
+        </div>
+    </div>
+    
+    <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4;">
+        <h3>Problem 8: Find the area between y = x² and y = 4x from x = 0 to x = 4</h3>
+        <div style="margin: 10px 0 0 20px;">
+            <p><strong>Solution:</strong></p>
+            <p>Area = ∫₀⁴ (4x - x²) dx</p>
+            <p style="color: #FBBC05;">= [2x² - x³/3]₀⁴</p>
+            <p style="color: #EA4335;">= 2(16) - 64/3 - 0</p>
+            <p style="color: #EA4335;">= 32 - 64/3 = 96/3 - 64/3 = 32/3</p>
+            <p><em>Setup is correct but need to check intersection points first</em></p>
+            <p style="color: #34A853;"><strong>Note:</strong> Curves intersect at x = 0 and x = 4, so setup is correct</p>
+        </div>
+    </div>
+    
+    <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4;">
+        <h3>Problem 9: Use implicit differentiation to find dy/dx for x² + y² = 25</h3>
+        <div style="margin: 10px 0 0 20px;">
+            <p><strong>Solution:</strong></p>
+            <p style="color: #FBBC05;">2x + 2y(dy/dx) = 0</p>
+            <p style="color: #EA4335;">dy/dx = -2x/2y = -x/y</p>
+            <p><em>Correct approach and final answer</em></p>
+            <p style="color: #34A853;"><strong>Correct:</strong> dy/dx = -x/y</p>
+        </div>
+    </div>
+    
+    <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4;">
+        <h3>Problem 10: Find the equation of the tangent line to y = x³ - 2x + 1 at x = 1</h3>
+        <div style="margin: 10px 0 0 20px;">
+            <p><strong>Solution:</strong></p>
+            <p>y' = 3x² - 2</p>
+            <p>At x = 1: y' = 3(1)² - 2 = 1</p>
+            <p>Point on curve: y = 1³ - 2(1) + 1 = 0, so (1, 0)</p>
+            <p style="color: #FBBC05;">Tangent line: y - 0 = 1(x - 1)</p>
+            <p style="color: #34A853;">y = x - 1</p>
+            <p><em>Perfect solution!</em></p>
+        </div>
+    </div>`,
+    
+    'diana_miller': `<h1>Calculus Assignment 3 - Diana Miller</h1>
+    <p><strong>Due:</strong> October 23, 2023 | <strong>Submitted:</strong> October 25, 2023 (LATE)</p>
+    
+    <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4;">
+        <h3>Problem 1: Find the derivative of f(x) = 3x² + 2x - 5</h3>
+        <div style="margin: 10px 0 0 20px;">
+            <p><strong>Solution:</strong></p>
+            <p>Using power rule: d/dx(xⁿ) = nxⁿ⁻¹</p>
+            <p>f'(x) = 3(2x¹) + 2(1x⁰) - 0</p>
+            <p style="color: #34A853;">f'(x) = 6x + 2</p>
+        </div>
+    </div>
+    
+    <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4;">
+        <h3>Problem 2: Evaluate ∫(4x³ - 2x + 1)dx</h3>
+        <div style="margin: 10px 0 0 20px;">
+            <p><strong>Solution:</strong></p>
+            <p>∫(4x³ - 2x + 1)dx</p>
+            <p>Using power rule for integration: ∫xⁿdx = xⁿ⁺¹/(n+1) + C</p>
+            <p>= 4(x⁴/4) - 2(x²/2) + x + C</p>
+            <p style="color: #34A853;">= x⁴ - x² + x + C</p>
+        </div>
+    </div>
+    
+    <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4;">
+        <h3>Problem 3: Find the limit: lim(x→2) (x² - 4)/(x - 2)</h3>
+        <div style="margin: 10px 0 0 20px;">
+            <p><strong>Solution:</strong></p>
+            <p>Direct substitution gives 0/0 (indeterminate form)</p>
+            <p>Factor numerator: x² - 4 = (x + 2)(x - 2)</p>
+            <p>lim(x→2) (x + 2)(x - 2)/(x - 2)</p>
+            <p>= lim(x→2) (x + 2)</p>
+            <p style="color: #34A853;">= 2 + 2 = 4</p>
+        </div>
+    </div>`,
+    
+    'eve_davis': `<h1>Calculus Assignment 3 - Eve Davis</h1>
+    <p><strong>Due:</strong> October 23, 2023 | <strong>Submitted:</strong> October 24, 2023</p>
+    
+    <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4;">
+        <h3>Problem 1: Find the derivative of f(x) = 3x² + 2x - 5</h3>
+        <div style="margin: 10px 0 0 20px;">
+            <p><strong>Solution:</strong></p>
+            <p>f'(x) = d/dx(3x²) + d/dx(2x) - d/dx(5)</p>
+            <p style="color: #FBBC05;">f'(x) = 6x + 2x - 0</p>
+            <p style="color: #EA4335;">f'(x) = 8x</p>
+            <p><em>Error in derivative of 2x</em></p>
+        </div>
+    </div>
+    
+    <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4;">
+        <h3>Problem 2: Evaluate ∫(4x³ - 2x + 1)dx</h3>
+        <div style="margin: 10px 0 0 20px;">
+            <p><strong>Solution:</strong></p>
+            <p>∫(4x³ - 2x + 1)dx</p>
+            <p>= ∫4x³dx - ∫2xdx + ∫1dx</p>
+            <p style="color: #EA4335;">= 4x⁴ - 2x² + x + C</p>
+            <p><em>Missing division by new power (4 and 2)</em></p>
+        </div>
+    </div>
+    
+    <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #4285F4;">
+        <h3>Problem 3: Find the limit: lim(x→2) (x² - 4)/(x - 2)</h3>
+        <div style="margin: 10px 0 0 20px;">
+            <p><strong>Solution:</strong></p>
+            <p>lim(x→2) (x² - 4)/(x - 2)</p>
+            <p>Factor: (x² - 4) = (x - 2)(x + 2)</p>
+            <p>= lim(x→2) (x - 2)(x + 2)/(x - 2)</p>
+            <p>= lim(x→2) (x + 2)</p>
+            <p style="color: #34A853;">= 4</p>
+        </div>
+    </div>`
+};
+
+function loadSubmission(studentId) {
+    const submissionHTML = submissionData[studentId];
+    const mainContent = submissionContent.parentElement;
+    
+    if (submissionHTML) {
+        // Check if this is a PDF or image submission (full-screen mode)
+        if (submissionHTML.includes('application/pdf') || submissionHTML.includes('<embed') || submissionHTML.includes('Student solution')) {
+            // PDF mode - full screen
+            mainContent.className = 'flex-1 overflow-hidden';
+            submissionContent.className = '';
+            submissionContent.style.cssText = 'width: 100%; height: 100%; overflow: auto; margin: 0; padding: 0;';
+            submissionContent.innerHTML = submissionHTML;
+        } else {
+            // Normal content mode
+            mainContent.className = 'flex-1 overflow-y-auto p-8';
+            submissionContent.className = 'max-w-4xl mx-auto bg-[var(--surface-color)] p-12 rounded-lg shadow-sm border border-[var(--border-color)]';
+            submissionContent.style.cssText = '';
+            submissionContent.innerHTML = `<div class="submission-wrapper" style="font-family: Arial, sans-serif; line-height: 1.6;">${submissionHTML}</div>`;
+        }
+        
+        // Re-render math for non-PDF content
+        if (window.renderMathInElement && !(submissionHTML.includes('application/pdf') || submissionHTML.includes('<embed') || submissionHTML.includes('Student solution'))) {
+            renderMathInElement(submissionContent, {
+                delimiters: [{
+                    left: '$$', right: '$$', display: true
+                }, {
+                    left: '$', right: '$', display: false
+                }],
+                throwOnError: false
+            });
+        }
+    } else {
+        // Error state
+        mainContent.className = 'flex-1 overflow-y-auto p-8';
+        submissionContent.className = 'max-w-4xl mx-auto bg-[var(--surface-color)] p-12 rounded-lg shadow-sm border border-[var(--border-color)]';
+        submissionContent.style.cssText = '';
+        submissionContent.innerHTML = `
+            <div class="text-center text-red-500 py-20">
+                <span class="material-icons text-6xl mb-4">error</span>
+                <h2 class="text-xl font-medium mb-2">Submission Not Found</h2>
+                <p>Could not find ${studentId} submission</p>
+            </div>
+        `;
+    }
+}
+
+// Consolidated event delegation for better performance
+document.addEventListener('click', (e) => {
+    // Skip if clicking on checkbox
+    if (e.target.classList.contains('student-checkbox')) {
+        return;
+    }
+    
+    // Handle student selection
+    if (e.target.closest('.student-button')) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const button = e.target.closest('.student-button');
+        const studentId = button.getAttribute('data-student');
+        
+        clearActiveStates();
+        
+        // Update the parent li element to show as active
+        const listItem = button.closest('.solution-item');
+        listItem.classList.add('active');
+        
+        loadSubmission(studentId);
+    }
+    
+    // Handle view mode buttons
+    else if (e.target.closest('.view-button')) {
+        const button = e.target.closest('.view-button');
+        
+        // Remove active class from all view buttons
+        document.querySelectorAll('.view-button').forEach(btn => btn.classList.remove('active'));
+        // Add active class to clicked button
+        button.classList.add('active');
+        
+        // Handle different view modes
+        if (button.classList.contains('solution-view-btn')) {
+            console.log('Switched to Solution view');
+        } else if (button.classList.contains('latex-view-btn')) {
+            console.log('Switched to LaTeX view');
+        } else if (button.classList.contains('logic-view-btn')) {
+            console.log('Switched to Logic view');
+        }
+    }
+    
+    // Handle delete assignment button
+    else if (e.target.closest('.delete-assignment-btn')) {
+        deleteSelectedSubmissions();
+    }
+    
+    // Handle upload button
+    else if (e.target.closest('.upload-btn')) {
+        handleFileUpload();
+    }
+    
+    // Handle complete grading button
+    else if (e.target.closest('.complete-grading-btn')) {
+        const checkedStudents = Array.from(document.querySelectorAll('.student-checkbox:checked'))
+            .map(cb => cb.getAttribute('data-student'));
+        
+        if (checkedStudents.length > 0) {
+            alert(`Complete grading for: ${checkedStudents.join(', ')}`);
+        } else {
+            alert('Complete grading for current student');
+        }
+    }
+});
+
+// Use event delegation for checkboxes
+document.addEventListener('change', (e) => {
+    if (e.target.classList.contains('student-checkbox')) {
+        const checkbox = e.target;
+        const listItem = checkbox.closest('.solution-item');
+        
+        if (checkbox.checked) {
+            listItem.classList.add('checked');
+        } else {
+            listItem.classList.remove('checked');
+        }
+    }
+});
+
+// Initialize KaTeX rendering
+document.addEventListener("DOMContentLoaded", function() {
+    if (window.renderMathInElement) {
+        renderMathInElement(document.body, {
+            delimiters: [{
+                left: '$$',
+                right: '$$',
+                display: true
+            }, {
+                left: '$',
+                right: '$',
+                display: false
+            }, {
+                left: '\\(',
+                right: '\\)',
+                display: false
+            }, {
+                left: '\\[',
+                right: '\\]',
+                display: true
+            }],
+            throwOnError: false
+        });
+    }
+});
+
+// Initialize the application
+document.addEventListener('DOMContentLoaded', () => {
+    // Generate student list from available submissions
+    generateStudentList();
+    
+    // Update submission count
+    updateSubmissionCount();
+    
+    // Load default submission
+    setTimeout(() => {
+        loadSubmission('bob_williams');
+    }, 100);
+});
+
+window.addEventListener('load', () => {
+    // Ensure all checkboxes are unchecked on page load
+    document.querySelectorAll('.student-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    
+    // Remove any checked classes from list items
+    document.querySelectorAll('.solution-item.checked').forEach(item => {
+        item.classList.remove('checked');
+    });
+});
+</script>
+
+</body></html>
